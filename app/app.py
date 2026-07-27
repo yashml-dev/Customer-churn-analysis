@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import predict
+import plotly.express as px
+from report_generator import generate_pdf
 
 from predict import predict_customer
 
@@ -26,7 +28,7 @@ st.markdown("""
     background-color: #1E1E1E;
     border: 1px solid #2E2E2E;
     border-radius: 16px;
-    padding: 18px;
+    padding: clamp(12px, 2vw, 18px);
     box-shadow: 0px 4px 12px rgba(0,0,0,0.25);
 }
 
@@ -41,14 +43,14 @@ st.markdown("""
 /* Metric Label */
 
 [data-testid="stMetricLabel"]{
-    font-size:16px;
+    font-size:clamp(14px, 2vw, 16px);
     font-weight:600;
 }
 
 /* Metric Value */
 
 [data-testid="stMetricValue"]{
-    font-size:32px;
+    font-size:clamp(26px, 4vw, 32px);
     font-weight:700;
 }
 
@@ -367,6 +369,38 @@ if predict:
     st.markdown("### Churn Probability")
 
     st.progress(churn_probability / 100)
+    st.divider()
+    st.subheader("🎯 Model Confidence")
+    confidence = abs(churn_probability - 50) * 2
+
+    if confidence >= 80:
+        confidence_level = "🟢 High"
+    elif confidence >= 50:
+        confidence_level = "🟡 Moderate"
+    else:
+        confidence_level = "🔴 Low"
+    left, right = st.columns([1, 3])
+    with left:
+        st.metric("Confidence", f"{confidence:.1f}% ")
+    with right:
+        st.markdown(f"### {confidence_level} Confidence")
+    st.progress(confidence / 100)
+    if confidence >= 80:
+        st.success(
+            "The model is highly confident in this prediction because the customer's profile strongly matches historical churn patterns."
+        )
+
+    elif confidence >= 50:
+        st.info(
+            "The model has moderate confidence. Some customer characteristics indicate churn, while others suggest the customer may stay."
+        )
+
+    else:
+        st.warning(
+            "The prediction is close to the decision boundary. The customer exhibits a mix of churn and retention characteristics, so this prediction should be interpreted with caution."
+        )
+
+
 # -------------------------
 # Customer Summary
 # -------------------------
@@ -422,37 +456,103 @@ if predict:
 
     risk_factors = []
     positive_factors = []
+    # Dictionary to store feature impact scores
+    feature_scores = {}
 
     if contract == "Month-to-month":
         risk_factors.append("📄 Month-to-month contract generally has a higher churn rate.")
+        feature_scores["Month-to-month Contract"] = 5
     else:
         positive_factors.append("📄 Long-term contract improves customer retention.")
+        feature_scores["Long-term Contract"] = -5
     # Tenure
     if tenure < 12:
         risk_factors.append("⏳ Customer has a short tenure.")
+        feature_scores["Short Tenure"] = 4
     elif tenure > 36:
         positive_factors.append("⏳ Long customer tenure indicates loyalty.")
+        feature_scores["Long Tenure"] = -4
     # Monthly Charges
     if monthly > 80:
         risk_factors.append("💷 High monthly charges may increase churn risk.")
+        feature_scores["High Monthly Charges"] = 3
     else:
         positive_factors.append("💷 Affordable monthly charges improve retention.")
+        feature_scores["Affordable Charges"] = -3
     # Tech Support
     if tech_support == "No":
         risk_factors.append("🛠 Customer does not have Tech Support.")
+        feature_scores["No Tech Support"] = 3
     else:
         positive_factors.append("🛠 Customer has Tech Support.")
+        feature_scores["Tech Support"] = -3
     # Online Security
     if online_security == "No":
         risk_factors.append("🔒 Customer does not use Online Security.")
+        feature_scores["No Online Security"] = 4
     else:
         positive_factors.append("🔒 Online Security helps retain customers.")
+        feature_scores["Online Security"] = -4
     # Internet Service
     if internet_service == "Fiber optic":
         risk_factors.append("🌐 Fibre optic customers historically show higher churn.")
+        feature_scores["Fiber Optic"] = 2
     # Paperless Billing
     if paperless_billing == "Yes":
         risk_factors.append("🧾 Paperless billing is associated with slightly higher churn.")
+        feature_scores["Paperless Billing"] = 2
+    # -------------------------
+    # Feature Impact Analysis
+    # ------------------------- 
+    impact_df = pd.DataFrame(
+        list(feature_scores.items()),
+        columns = ["Feature", "Impact"]
+    )
+
+    impact_df = impact_df.sort_values("Impact")
+    
+
+    fig = px.bar(
+        impact_df,
+        x="Impact",
+        y="Feature",
+        orientation="h",
+        color="Impact",
+        color_continuous_scale=["#2ECC71", "#F1C40F", "#E74C3C"]
+    )
+
+    fig.update_layout(
+        
+        height=350,
+        template="plotly_dark",
+        xaxis_title="",
+        yaxis_title="",
+        xaxis = dict(
+            showticklabels=False,
+            showgrid=False,
+            zeroline=True,
+            zerolinecolor="gray"
+
+        ),
+        coloraxis_showscale=False,
+        margin=dict(l=20, r=20, t=60, b=20),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
+    fig.update_traces(
+        hovertemplate="<b>%{y}</b><br>Impact Score: %{x}<extra></extra>",
+        width = 0.55
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    st.caption(
+        "Positive values indicate factors associated with higher churn risk, while negative values indicate factors associated with customer retention."
+    )
+    st.caption(
+        "The chart visualizes rule-based factors contributing to the prediction and is intended to aid interpretation."
+    )
+
+    st.divider()
+
     left, right = st.columns(2)
 
     with left:
@@ -465,34 +565,40 @@ if predict:
         else:
             st.success("No major churn risk factors detected.")
         st.divider()
-        st.subheader("💡 Retention Recommendation")
+        st.subheader("💡Recommended Actions")
         
         if churn_probability >= 70:
+            recommendations = [
+                "🎁 Offer a loyalty discount",
+                "👨‍💼 Assign a dedicated support executive",
+                "📄 Recommend a long-term contract",
+                "📞 Contact the customer immediately"
+
+            ]
+            for recommendation in recommendations:
+                st.error(recommendation)
         
-            st.error("🎁 Offer a loyalty discount")
-            st.error("👨‍💼 Assign a dedicated support executive")
-            st.error("📄 Recommend a long-term contract")
-            st.error("📞 Contact the customer immediately")
+            
         
         elif churn_probability >= 40:
         
-            st.warning("""
-                • Send personalised offers
-        
-                • Recommend value-added services
-        
-                • Monitor customer activity
-                    """)
+            recommendations = [
+                "📧 Send personalised offers",
+                "🎁 Recommend value-added services",
+                "📊 Monitor customer activity"
+            ]
+            for recommendation in recommendations:
+                st.warning(recommendation)
         
         else:
         
-            st.success("""
-                • Customer appears satisfied
-    
-                • Continue regular engagement
-        
-                •    Promote premium plans when appropriate
-                    """)
+            recommendations = [
+                "😊 Customer appears satisfied",
+                "🤝 Continue regular engagement",
+                "⭐ Promote premium plans when appropriate"
+            ]
+            for recommendation in recommendations:
+                st.success(recommendation)
 
     with right:
 
@@ -510,7 +616,7 @@ if predict:
 
         if churn_probability >= 70:
 
-            st.info(f"""
+            business_insight = f"""
                 This customer has a **HIGH predicted churn risk ({churn_probability:.2f}%)**.
 
                 The customer's profile indicates multiple characteristics commonly associated
@@ -524,7 +630,8 @@ if predict:
                 • Offer a long-term contract with incentives.
 
                 • Promote value-added services to improve customer satisfaction.
-                """)
+                """
+            st.info(business_insight)
 
         elif churn_probability >= 40:
 
@@ -556,4 +663,43 @@ if predict:
                 • Focus on cross-selling premium services.
 
                 • Maintain regular engagement and customer satisfaction.
+
             """)
+        report_data = {
+
+        # Prediction
+            "prediction": prediction,
+            "risk_level": risk,
+            "churn_probability": churn_probability,
+            "stay_probability": stay_probability,
+
+    # Customer Details
+            "gender": gender,
+            "senior_citizen": senior,
+            "partner": partner,
+            "dependents": dependents,
+
+            "tenure": tenure,
+            "contract": contract,
+            "internet_service": internet_service,
+            "tech_support": tech_support,
+
+            "monthly_charges": monthly,
+            "total_charges": total,
+
+    # Analysis
+            "risk_factors": risk_factors,
+            "positive_factors": positive_factors,
+            "feature_scores": feature_scores,
+
+    # Text Sections
+            "business_insight": business_insight,
+            "recommendations": recommendations
+        }
+        pdf = generate_pdf(report_data)
+        st.download_button(
+            label = "📄 Download Customer Churn Analysis Report",
+            data=pdf,
+            file_name="Customer_Churn_Report.pdf",
+            mime="application/pdf"
+        )
