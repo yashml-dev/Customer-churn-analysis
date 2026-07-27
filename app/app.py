@@ -635,7 +635,7 @@ if predict:
 
         elif churn_probability >= 40:
 
-            st.info(f"""
+            business_insight = f"""
                 This customer has a **MODERATE predicted churn risk ({churn_probability:.2f}%)**.
 
                 While there are no immediate signs of churn, some attributes indicate
@@ -648,11 +648,11 @@ if predict:
                 • Recommend bundled services.
 
                 • Continue monitoring customer engagement.
-            """)
+            """
 
         else:
 
-            st.info(f"""
+            business_insight = f"""
                 This customer has a **LOW predicted churn risk ({churn_probability:.2f}%)**.
 
                 The customer's profile reflects strong loyalty and continued engagement
@@ -664,7 +664,7 @@ if predict:
 
                 • Maintain regular engagement and customer satisfaction.
 
-            """)
+            """
         report_data = {
 
         # Prediction
