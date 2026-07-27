@@ -139,7 +139,7 @@ Business Recommendations & PDF Report
 
 ### ROC Curve
 
-![ROC Curve](app/assets/roc_auc.png)
+![ROC AUC](app/assets/roc_auc.png)
 
 The model achieves an **AUC score of 0.842**, demonstrating good discrimination between customers likely to churn and those likely to stay.
 
