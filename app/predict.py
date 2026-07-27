@@ -1,12 +1,18 @@
 import joblib
 from pathlib import Path
-
+import os
 
 # -------------------------------------------------
 # Load Saved Model
 # -------------------------------------------------
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_PATH = "../models/best_model.pkl"
+MODEL_PATH = BASE_DIR / "models" / "best_model.pkl"
+
+print("Current working directory:", os.getcwd())
+print("BASE_DIR:", BASE_DIR)
+print("MODEL_PATH:", MODEL_PATH)
+print("Exists?", MODEL_PATH.exists())
 
 model = joblib.load(MODEL_PATH)
 print(model)
