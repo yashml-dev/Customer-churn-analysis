@@ -67,17 +67,17 @@ The goal of this project is to help businesses identify customers who are likely
 
 ## 🏠 Home Page
 
-![Home Page](assets/home.png)
+![Home Page](app/assets/home.png)
 
 
 
 ## 📊 Prediction Dashboard
 
-![Prediction Dashboard](assets/prediction.png)
+![Prediction Dashboard](app/assets/prediction.png)
 
 ## 📄 Generated PDF Report
 
-![PDF Report](assets/report_pdf.png)
+![PDF Report](app/assets/report_pdf.png)
 
 ---
 
@@ -139,7 +139,7 @@ Business Recommendations & PDF Report
 
 ### ROC Curve
 
-![ROC Curve](assets/roc_auc.png)
+![ROC Curve](app/assets/roc_auc.png)
 
 The model achieves an **AUC score of 0.842**, demonstrating good discrimination between customers likely to churn and those likely to stay.
 
